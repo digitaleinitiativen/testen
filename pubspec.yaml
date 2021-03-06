@@ -1,5 +1,5 @@
 name: testen
-description: A new Flutter project.
+description: testing
 
 # The following line prevents the package from being accidentally published to
 # pub.dev using `pub publish`. This is preferred for private packages.
@@ -24,6 +24,11 @@ dependencies:
     flutter:
         sdk: flutter
     cupertino_icons: ^1.0.1
+    http: ^0.13.0
+    intl: ^0.17.0
+    shared_preferences: ^2.0.3
+    timetable: ^0.2.9
+    url_launcher: ^6.0.2
 
 dev_dependencies:
     flutter_test:
@@ -33,6 +38,9 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 # The following section is specific to Flutter.
 flutter:
+    assets:
+        - packages/time_machine/data/cultures/cultures.bin
+        - packages/time_machine/data/tzdb/tzdb.bin
     # The following line ensures that the Material Icons font is
     # included with your application, so that you can use the icons in
     # the material Icons class.
