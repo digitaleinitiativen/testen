@@ -16,12 +16,16 @@ eher überschaubar.
 
 testwillige sollen mit *🧪 testen*
 
+## Build web version
+flutter build web --source-maps --web-renderer canvaskit
+
+
 ## plan
 
 * [x] liste aller möglichen standorte
 * [x] auswahl eines testorts und anzeige der offenen slots
-* [ ] inkludieren eines tracking und feedback services
-* [ ] erste veröffentlichung
-* [ ] auswahl mehrer orte
+* [x] erste veröffentlichung
+* [x] auswahl mehrer orte
 * [x] optimierte darstellung der möglichen zeitpunkte
 * [x] speichern der zuletzt ausgewählten orte
+* [ ] inkludieren eines tracking und feedback services

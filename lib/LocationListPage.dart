@@ -14,6 +14,8 @@ class LocationListPage extends StatefulWidget {
 }
 
 class _LocationListPageState extends State<LocationListPage> {
+  List<TestingLocation> locations = [];
+
   Future<List<TestingLocation>> fetchLocations() async {
     try {
       final response =
@@ -29,17 +31,19 @@ class _LocationListPageState extends State<LocationListPage> {
     return null;
   }
 
+  void saveLocation() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('location', locations.map((loc) => loc.id).toList());
+  }
+
   void loadLoaction() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String location = prefs.getString('location');
-    print(location);
-    if (location != null) {
-      Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => TestingLocationPage(location: TestingLocation.fromString(location)),
-          ));
-    }
+    List<String> locations = prefs.getStringList('location');
+    print(locations);
+    if (locations == null) return;
+    if (locations.isEmpty) return;
+    List<TestingLocation> testingLocations = locations.map((location) => TestingLocation.fromString(location)).toList();
+    Navigator.push(context, MaterialPageRoute(builder: (context) => TestingLocationPage(locations: testingLocations)));
   }
 
   @override
@@ -51,25 +55,69 @@ class _LocationListPageState extends State<LocationListPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Testorte Vorarlberg'),
-      ),
+      appBar: AppBar(title: Text('Testorte Vorarlberg')),
       body: FutureBuilder<List<TestingLocation>>(
         future: fetchLocations(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
-          return SearchableLocationList(
-            itemlist: snapshot.data,
-            builder: (location) => ListTile(
-              title: Text(location.name),
-              subtitle: Text(location.address ?? ''),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => TestingLocationPage(location: location),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: IntrinsicHeight(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Wrap(
+                          children: locations
+                              .map((location) => Padding(
+                                    padding: const EdgeInsets.all(4.0),
+                                    child: Chip(
+                                      label: Text(location.name),
+                                      onDeleted: () => setState(() {
+                                        locations.remove(location);
+                                      }),
+                                    ),
+                                  ))
+                              .toList(),
+                        ),
+                      ),
+                      FractionallySizedBox(
+                        heightFactor: 1.0,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(primary: Theme.of(context).primaryColor),
+                          onPressed: () async {
+                            saveLocation();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => TestingLocationPage(locations: locations)),
+                            );
+                          },
+                          child: Text('Testtermine anzeigen'),
+                        ),
+                      )
+                    ],
+                  ),
                 ),
               ),
-            ),
+              Expanded(
+                child: SearchableLocationList(
+                  itemlist: snapshot.data,
+                  builder: (location) => ListTile(
+                    title: Text(location.name),
+                    subtitle: Text(location.address ?? ''),
+                    onTap: () {
+                      if (!locations.map((e) => e.id).contains(location.id)) {
+                        setState(() {
+                          locations.add(location);
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ],
           );
         },
       ),
