@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -39,27 +40,28 @@ class TestingLocationPage extends StatelessWidget {
         future: fetchSlots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
+          bool isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
           return OrientationBuilder(
             builder: (BuildContext context, Orientation orientation) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Wrap(
-                      children: locations
-                          .map((location) => Padding(
-                                padding: const EdgeInsets.all(4.0),
-                                child: Chip(label: Text(location.name)),
-                              ))
-                          .toList(),
+                  if (!isPortrait)
+                    Padding(
+                      padding: const EdgeInsets.all(8.0).add(const EdgeInsets.only(bottom: 16)),
+                      child: Wrap(
+                        children: locations
+                            .map((location) => Padding(
+                                  padding: const EdgeInsets.all(4.0),
+                                  child: Chip(label: Text(location.name)),
+                                ))
+                            .toList(),
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 16),
                   Expanded(
                     child: TimetableExample(
                       locationSlots: snapshot.data,
-                      isPortrait: MediaQuery.of(context).orientation == Orientation.portrait,
+                      isPortrait: isPortrait,
                     ),
                   ),
                   SizedBox(height: 16),
@@ -75,7 +77,7 @@ class TestingLocationPage extends StatelessWidget {
                           padding: const EdgeInsets.all(8.0),
                           child: Text(
                             'Zur Anmeldung zum Antigen-Test',
-                            style: TextStyle(fontSize: 32),
+                            style: TextStyle(fontSize: isPortrait ? 20 : 32),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -104,12 +106,14 @@ class TimetableExample extends StatefulWidget {
 
 class _TimetableExampleState extends State<TimetableExample> {
   TimetableController<BasicEvent> _controller;
+  static const GREENSLOTCOUNT = 32;
 
   void generateController() {
     List<TestingSlot> allSlots = widget.locationSlots.values.expand((e) => e).toList();
-    int maxTestsPerSlot = allSlots.map((s) => s.availableTestCount).reduce((v, e) => (v > e ? v : e));
     LocalTime startTime = allSlots.map((s) => s.localStartTime.clockTime).reduce((v, e) => (v < e ? v : e));
     LocalTime endTime = allSlots.map((s) => s.localEndTime.clockTime).reduce((v, e) => (v > e ? v : e));
+    int maxTestsPerSlot =
+        min(allSlots.map((s) => s.availableTestCount).reduce((v, e) => (v > e ? v : e)), GREENSLOTCOUNT);
 
     _controller = TimetableController(
       eventProvider: EventProvider.list(
@@ -125,7 +129,8 @@ class _TimetableExampleState extends State<TimetableExample> {
                 ))
             .toList(),
       ),
-      initialTimeRange: InitialTimeRange.range(startTime: startTime, endTime: endTime),
+      initialTimeRange:
+          widget.isPortrait ? InitialTimeRange.zoom(4) : InitialTimeRange.range(startTime: startTime, endTime: endTime),
       initialDate: LocalDate.today(),
       visibleRange: VisibleRange.days(widget.isPortrait ? 7 : 14),
       firstDayOfWeek: DayOfWeek.monday,

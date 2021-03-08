@@ -38,11 +38,13 @@ class _LocationListPageState extends State<LocationListPage> {
 
   void loadLoaction() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> locations = prefs.getStringList('location');
-    print(locations);
-    if (locations == null) return;
-    if (locations.isEmpty) return;
-    List<TestingLocation> testingLocations = locations.map((location) => TestingLocation.fromString(location)).toList();
+    List<String> loadedLocations = prefs.getStringList('location');
+    print(loadedLocations);
+    if (loadedLocations == null) return;
+    if (loadedLocations.isEmpty) return;
+    List<TestingLocation> testingLocations =
+        loadedLocations.map((location) => TestingLocation.fromString(location)).toList();
+    locations = testingLocations;
     Navigator.push(context, MaterialPageRoute(builder: (context) => TestingLocationPage(locations: testingLocations)));
   }
 
@@ -65,41 +67,7 @@ class _LocationListPageState extends State<LocationListPage> {
             children: [
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: IntrinsicHeight(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Wrap(
-                          children: locations
-                              .map((location) => Padding(
-                                    padding: const EdgeInsets.all(4.0),
-                                    child: Chip(
-                                      label: Text(location.name),
-                                      onDeleted: () => setState(() {
-                                        locations.remove(location);
-                                      }),
-                                    ),
-                                  ))
-                              .toList(),
-                        ),
-                      ),
-                      FractionallySizedBox(
-                        heightFactor: 1.0,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(primary: Theme.of(context).primaryColor),
-                          onPressed: () async {
-                            saveLocation();
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => TestingLocationPage(locations: locations)),
-                            );
-                          },
-                          child: Text('Testtermine anzeigen'),
-                        ),
-                      )
-                    ],
-                  ),
-                ),
+                child: _buildLocationChips(context),
               ),
               Expanded(
                 child: SearchableLocationList(
@@ -120,6 +88,52 @@ class _LocationListPageState extends State<LocationListPage> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildLocationChips(BuildContext context) {
+    Widget chips = Wrap(
+      children: locations
+          .map((location) => Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: Chip(
+                  label: Text(location.name),
+                  onDeleted: () => setState(() {
+                    locations.remove(location);
+                  }),
+                ),
+              ))
+          .toList(),
+    );
+    Widget button = ElevatedButton(
+      style: ElevatedButton.styleFrom(primary: Theme.of(context).primaryColor),
+      onPressed: () async {
+        saveLocation();
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => TestingLocationPage(locations: locations)),
+        );
+      },
+      child: Text('Testtermine anzeigen'),
+    );
+
+    if (MediaQuery.of(context).orientation == Orientation.portrait) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          chips,
+          SizedBox(height: 8),
+          button,
+        ],
+      );
+    }
+    return IntrinsicHeight(
+      child: Row(
+        children: [
+          Expanded(child: chips),
+          FractionallySizedBox(heightFactor: 1.0, child: button),
+        ],
       ),
     );
   }
