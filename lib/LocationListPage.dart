@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,7 +19,7 @@ class _LocationListPageState extends State<LocationListPage> {
       final response =
           await http.get(Uri.parse('$baseUrl/GesundheitRegister/Covid/GetCovidTestLocationMassTest?betriebe=0'));
       if (response.statusCode == 200) {
-        List<dynamic> json = jsonDecode(response.body);
+        List<dynamic> json = kDebugMode ? jsonDecode(response.body) : jsonDecode(response.body)['contents'];
         return json.map((e) => e['key'].toString()).map((e) => TestingLocation.fromString(e)).toList();
       }
     } catch (e) {
@@ -51,7 +52,7 @@ class _LocationListPageState extends State<LocationListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('🧪 Testorte Vorarlberg'),
+        title: Text('Testorte Vorarlberg'),
       ),
       body: FutureBuilder<List<TestingLocation>>(
         future: fetchLocations(),

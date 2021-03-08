@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -25,7 +26,8 @@ class TestingLocationPage extends StatelessWidget {
     final response = await http
         .post(Uri.parse('$baseUrl/GesundheitRegister/Covid/GetCovidTestDatesMassTest'), body: {'ort': location.id});
     if (response.statusCode == 200) {
-      List<dynamic> json = jsonDecode(response.body);
+      List<dynamic> json = kDebugMode ? jsonDecode(response.body) : jsonDecode(response.body)['contents'];
+      print(json);
       return json
           .map((e) => TestingSlot.fromString(e['value'].toString(), int.tryParse(e['key'].toString()), location))
           .toList();
@@ -37,7 +39,7 @@ class TestingLocationPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('🧪 ${location.name}'),
+        title: Text('${location.name}'),
       ),
       body: FutureBuilder<List<TestingSlot>>(
         future: fetchSlots(),
@@ -149,7 +151,8 @@ class _TimetableExampleState extends State<TimetableExample> {
         partDayEventMinimumDuration: Period(minutes: 15),
         partDayEventMinimumDeltaForStacking: Period(minutes: 30),
         partDayEventMinimumHeight: 1,
-        // dividerColor: widget.isPortrait ? null : Colors.white,
+        dividerColor: widget.isPortrait ? null : Colors.white,
+        timeIndicatorColor: widget.isPortrait ? null : Colors.transparent,
       ),
       eventBuilder: (event) {
         return BasicEventWidget(
