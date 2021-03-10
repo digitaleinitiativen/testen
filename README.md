@@ -14,13 +14,15 @@ jedoch wenn es darum geht möglichst schnell aus mehreren möglichen teststellen
 für einen zeitlich passenden testslot auszuwählen ist die benutzerfreundlichkeit
 eher überschaubar.
 
-testwillige sollen mit *🧪 testen*
+testwillige sollen mit *🧪 testen* den besten ort für den entsprechenden
+zeitslot finden.
 
 ## plan
 
 * [x] liste aller möglichen standorte
 * [x] auswahl eines testorts und anzeige der offenen slots
-* [ ] inkludieren eines tracking und feedback services
+* [ ] bissi styling
+* [ ] tracking und feedback service
 * [ ] erste veröffentlichung
 * [ ] auswahl mehrer orte
 * [ ] optimierte darstellung der möglichen zeitpunkte
