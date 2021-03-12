@@ -10,6 +10,19 @@ let domDates = document.getElementById('dates');
 
 let dateRegistry = {};
 
+let colors = [
+	"#eddcd2ff",
+	"#fff1e6ff",
+	"#fde2e4ff",
+	"#fad2e1ff",
+	"#c5deddff",
+	"#dbe7e4ff",
+	"#f0efebff",
+	"#d6e2e9ff",
+	"#bcd4e6ff",
+	"#99c1deff"
+];
+
 function destructDate(key, date) {
 	let reg = /(\d\d)\.(\d\d)\.(\d\d\d\d) (\d\d):(\d\d) - (\d\d):(\d\d) [^:]*: (\d+)/gmi;
 	let a = reg.exec(date);
@@ -31,7 +44,8 @@ function destructDate(key, date) {
 }
 
 function destructLocation(location) {
-	let reg = /^([^\ ]*) ([^,]*)(, (.*))?/gmi;
+	location = location.replaceAll("Düns Feuerwehrhaus", "Düns Feuerwehrhaus,")
+	let reg = /^((St\. )?(Langen bei Bregenz)?(Anton im Montafon)?[^\, ]*) ?([^,]*), (.*)?/gmi;
 	let a = reg.exec(location);
 	if(a == null) { // testbus
 		return {
@@ -41,14 +55,16 @@ function destructLocation(location) {
 		}
 	}
 	return {
-		place: a[2],
-		city: a[1],
-		street: a[4] ? a[4] : "" // landestheater
+		place: a[5],
+		city: a[1] ? a[1] : "",		// sulzberg-thal
+		street: a[6] ? a[6] : "" 	// landestheater
 	};
 }
 
 function fillLocations(locations) {
 	for(var i = 0; i < locations.length; i++) {
+		let location = destructLocation(locations[i].value);
+
 		let node = document.createElement('li');
 
 		let cb = document.createElement('input');
@@ -63,8 +79,12 @@ function fillLocations(locations) {
 
 		let lbl = document.createElement('label')
 		lbl.htmlFor = cb.id;
-		lbl.appendChild(document.createTextNode(destructLocation(locations[i].value).city));
+		lbl.appendChild(document.createTextNode(location.city));
 		node.appendChild(lbl);
+
+		let small = document.createElement('small');
+		small.appendChild(document.createTextNode(location.place));
+		node.appendChild(small);
 
 		node.id = cb.name;
 		node.dataset.key = locations[i].key;
@@ -79,12 +99,16 @@ function fillLocations(locations) {
 function swapState(node) {
 	if(node.parentElement == domSelected) {
 		domLocations.appendChild(node); //todo insert in right position
+		node.style.backgroundColor = "";
 		node.draggable = false;
 		node.ondragstart = node.ondragover = node.ondrop = null;
 		fillDates();
 	}
 	else {
 		domSelected.appendChild(node);
+		node.style.backgroundColor = colors[
+			Math.min(domSelected.children.length - 1, colors.length - 1)
+		];
 		node.draggable = true;
 		node.ondragstart = function(ev) {
 			ev.dataTransfer.setData("id", ev.target.id);
@@ -96,6 +120,11 @@ function swapState(node) {
 				document.getElementById(ev.dataTransfer.getData("id")),
 				ev.target.parentElement
 			);
+			for(let i = 0; i < domSelected.children.length; i++) {
+				domSelected.children.item(i).style.backgroundColor = colors[
+					Math.min(i, colors.length - 1)
+				];
+			}
 			fillDates();
 		}
 	}
@@ -129,9 +158,22 @@ function fillDates(w) {
 
 	let info;
 	while((info = getNextDate(locations, date)) && date < endDate) {
+		if(!domDates.children.length || date.getDay() != info.date.endDate.getDay()) {
+			let node = document.createElement('li');
+			node.appendChild(document.createTextNode(info.date.day + ". " + info.date.month + "."));
+			domDates.appendChild(node);			
+		}
+
 		let node = document.createElement('li');
-		node.appendChild(document.createTextNode(info.date.original));
+		node.appendChild(document.createTextNode(
+			info.date.startHour + ":" + info.date.startMinute + "-" +
+			info.date.endHour + ":" + info.date.endMinute +
+			" (" + info.date.slots + ")"
+		));
 		domDates.appendChild(node);
+		node.style.backgroundColor = colors[
+			Math.min(info.index, colors.length - 1)
+		];
 		date = info.date.endDate;
 	}
 
@@ -140,11 +182,12 @@ function fillDates(w) {
 function getNextDate(locations, earliest) {
 	let date = null;
 	for(var i = 0; i < locations.length; i++) {
+		if(!dateRegistry[locations[i]]) continue;
 		for(let j = 0; j < dateRegistry[locations[i]].length; j++) {
 			let itm = dateRegistry[locations[i]][j];
 			if(itm.startDate < earliest) continue;
 			if(!date || date.date.startDate > itm.startDate)
-				date = { date: itm, location: locations[i] };
+				date = { date: itm, location: locations[i], index: i };
 		}
 	}
 	return date;

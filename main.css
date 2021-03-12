@@ -16,7 +16,6 @@ input[type=checkbox] {
 	padding: 0px;
 }
 
-
 .locations li {
 	margin: 2px;
 	padding: 2px;
@@ -25,4 +24,14 @@ input[type=checkbox] {
 
 .locations li input[type=checkbox]:checked + label {
 	font-weight: bold;
+}
+
+.locations li label, .locations li small {
+	text-transform: lowercase;
+}
+
+.locations li small {
+	color: black;
+	font-size: 10px;
+	display: block;
 }
