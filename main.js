@@ -1,6 +1,7 @@
 let config = {
-	base_url: 'https://thingproxy.freeboard.io/fetch/https://vorarlbergtestet.lwz-vorarlberg.at',
-	locations_path: '/GesundheitRegister/Covid/GetCovidTestLocationMassTest?betriebe=0',
+	proxy_url: 'https://digitaleinitiativen.at/testen/proxy.php?csurl=',
+	base_url: 'https://vorarlbergtestet.lwz-vorarlberg.at',
+	locations_path: '/GesundheitRegister/Covid/GetCovidTestLocationMassTest&betriebe=0',
 	dates_path: '/GesundheitRegister/Covid/GetCovidTestDatesMassTest'
 };
 
@@ -74,6 +75,7 @@ function fillLocations(locations) {
 		cb.id = cb.name + "_cb";
 		cb.onchange = function(ev){
 			swapState(node);
+			loadDates(this.parentNode.dataset.key);
 		}
 		node.appendChild(cb);
 
@@ -89,11 +91,17 @@ function fillLocations(locations) {
 		node.id = cb.name;
 		node.dataset.key = locations[i].key;
 		node.dataset.value = locations[i].value;
-		node.onclick = function() {
-			loadDates(this.dataset.key);
-		}
 		domLocations.appendChild(node);
 	}
+
+	let prefill = getCookie('locations').split('|');
+	for(let i = 0; i < domLocations.children.length; i++) {
+		if(prefill.includes(domLocations.children.item(i).dataset.key)) {
+			loadDates(domLocations.children.item(i).dataset.key);
+			swapState(domLocations.children.item(i));
+		}
+	}
+
 }
 
 function swapState(node) {
@@ -102,9 +110,7 @@ function swapState(node) {
 		node.style.backgroundColor = "";
 		node.draggable = false;
 		node.ondragstart = node.ondragover = node.ondrop = null;
-		fillDates();
-	}
-	else {
+	} else {
 		domSelected.appendChild(node);
 		node.style.backgroundColor = colors[
 			Math.min(domSelected.children.length - 1, colors.length - 1)
@@ -128,10 +134,11 @@ function swapState(node) {
 			fillDates();
 		}
 	}
+	fillDates();
 }
 
 function loadLocations(locations) {
-	fetch(config.base_url + config.locations_path).then(function(response) {
+	fetch(config.proxy_url + config.base_url + config.locations_path).then(function(response) {
 		return response.json();
 	}).then(function(locations) {
 		fillLocations(locations);
@@ -144,23 +151,54 @@ function registerDates(location, dates) {
 		dateRegistry[location].push(destructDate(dates[i].key, dates[i].value));
 }
 
-function fillDates(w) {
+function fillDates() {
 	domDates.innerHTML = '';
-	if(!domSelected.firstChild) return;
+	if(!domSelected.firstChild){
+		setCookie('locations', "");
+		return;
+	}
 	let location = domSelected.firstChild;
 	let locations = [];
 	do {
 		locations.push(location.dataset.key);
 	} while(location = location.nextSibling);
+
+	setCookie('locations', locations.join("|"));
+
 	let date = getFirstDate(locations);
-	let endDate = new Date(date.getTime() + 1000 * 60 * 60 * 24 * 3);
+	if(!date) return false;
+
+	let endDate = new Date(date.getTime() + 1000 * 60 * 60 * 24 * 5);
 	endDate.setHours(24, 0, 0);
 
 	let info;
 	while((info = getNextDate(locations, date)) && date < endDate) {
 		if(!domDates.children.length || date.getDay() != info.date.endDate.getDay()) {
 			let node = document.createElement('li');
-			node.appendChild(document.createTextNode(info.date.day + ". " + info.date.month + "."));
+			node.classList.add("date");
+			node.appendChild(document.createTextNode(
+				info.date.day + "." + info.date.month + "." + info.date.year
+			));
+			let small = document.createElement('small');
+			small.appendChild(document.createTextNode(
+				"........................"
+			));
+			node.appendChild(small);
+			domDates.appendChild(node);			
+		} else if(date < info.date.startDate) {
+			let node = document.createElement('li');
+			node.appendChild(document.createTextNode(
+				(date.getHours() < 10 ? "0" : "") + date.getHours() + ":" +
+				(date.getMinutes() < 10 ? "0" : "") + date.getMinutes() + "-" +
+				(info.date.startDate.getHours() < 10 ? "0" : "") + info.date.startDate.getHours() + ":" + 
+				(info.date.startDate.getMinutes() < 10 ? "0" : "") + info.date.startDate.getMinutes() +
+				" (0)"
+			));
+			let small = document.createElement('small');
+			small.appendChild(document.createTextNode(
+				"sorry, we are out"
+			));
+			node.appendChild(small);
 			domDates.appendChild(node);			
 		}
 
@@ -170,6 +208,11 @@ function fillDates(w) {
 			info.date.endHour + ":" + info.date.endMinute +
 			" (" + info.date.slots + ")"
 		));
+		let small = document.createElement('small');
+		small.appendChild(document.createTextNode(
+			destructLocation(info.location).city + " " + destructLocation(info.location).place
+		));
+		node.appendChild(small);
 		domDates.appendChild(node);
 		node.style.backgroundColor = colors[
 			Math.min(info.index, colors.length - 1)
@@ -194,6 +237,7 @@ function getNextDate(locations, earliest) {
 }
 
 function getFirstDate(locations) {
+	console.log(dateRegistry);
 	let d = null;
 	for(var i = 0; i < locations.length; i++) {
 		if(!dateRegistry[locations[i]] || !dateRegistry[locations[i]].length) continue;
@@ -204,19 +248,34 @@ function getFirstDate(locations) {
 }
 
 function loadDates(location) {
-	fetch(config.base_url + config.dates_path, {
-	    "headers": {
-	        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
-	    },
-	    "body": "ort=" + encodeURI(location.replaceAll(" ", "+")),
-	    "method": "POST",
-	    "mode": "cors"
-	}).then(function(response) {
+	fetch(config.proxy_url + config.base_url + config.dates_path + "&ort=" + encodeURI(location.replaceAll(" ", "+"))).then(function(response) {
 		return response.json();
 	}).then(function(dates) {
 		registerDates(location, dates);
 		fillDates();
 	});
+}
+
+function setCookie(cname, cvalue, exdays) {
+  var d = new Date();
+  d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+  var expires = "expires="+d.toUTCString();
+  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/; SameSite=Strict";
+}
+
+function getCookie(cname) {
+  var name = cname + "=";
+  var ca = document.cookie.split(';');
+  for(var i = 0; i < ca.length; i++) {
+    var c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
 }
 
 window.onload = function(){

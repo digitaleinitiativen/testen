@@ -7,6 +7,17 @@ body {
 	background-color: #aaa;
 }
 
+@media (min-width: 600px) {
+	.container {
+		display: flex;
+	}
+
+	.container section {
+		width: 32%;
+		margin: 10px;
+	}
+}
+
 input[type=checkbox] {
 	display: none;
 }
@@ -16,21 +27,28 @@ input[type=checkbox] {
 	padding: 0px;
 }
 
-.locations li {
+.locations li, .locations li label, #dates li, #dates li {
+	cursor: pointer;
+}
+
+.locations li, #dates li {
 	margin: 2px;
 	padding: 2px;
 	background-color: #ccc;
 }
 
-.locations li input[type=checkbox]:checked + label {
-	font-weight: bold;
+#dates li.date {
+	background-color: #eee;
 }
 
-.locations li label, .locations li small {
+.locations li input[type=checkbox]:checked + label {
+}
+
+.locations li label, .locations li small, #dates li small {
 	text-transform: lowercase;
 }
 
-.locations li small {
+.locations li small, #dates li small {
 	color: black;
 	font-size: 10px;
 	display: block;
