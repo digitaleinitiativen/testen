@@ -237,7 +237,6 @@ function getNextDate(locations, earliest) {
 }
 
 function getFirstDate(locations) {
-	console.log(dateRegistry);
 	let d = null;
 	for(var i = 0; i < locations.length; i++) {
 		if(!dateRegistry[locations[i]] || !dateRegistry[locations[i]].length) continue;
